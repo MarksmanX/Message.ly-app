@@ -8,7 +8,6 @@ describe("Test Message class", function () {
   beforeEach(async function () {
     await db.query("DELETE FROM messages");
     await db.query("DELETE FROM users");
-    await db.query("ALTER SEQUENCE messages_id_seq RESTART WITH 1");
 
     let u1 = await User.register({
       username: "test1",
@@ -58,32 +57,33 @@ describe("Test Message class", function () {
       to_username: "test2",
       body: "new"
     });
+    let messageId = m.id;
     expect(m.read_at).toBe(undefined);
 
-    Message.markRead(m.id);
+    await Message.markRead(messageId);
     const result = await db.query("SELECT read_at from messages where id=$1",
-        [m.id]);
+        [messageId]);
     expect(result.rows[0].read_at).toEqual(expect.any(Date));
   });
 
   test("can get", async function () {
-    let u = await Message.get(1);
+    let u = await Message.get(10);
     expect(u).toEqual({
       id: expect.any(Number),
-      body: "u1-to-u2",
+      body: "u2-to-u1",
       sent_at: expect.any(Date),
       read_at: null,
       from_user: {
-        username: "test1",
-        first_name: "Test1",
-        last_name: "Testy1",
-        phone: "+14155550000",
-      },
-      to_user: {
         username: "test2",
         first_name: "Test2",
         last_name: "Testy2",
         phone: "+14155552222",
+      },
+      to_user: {
+        username: "test1",
+        first_name: "Test1",
+        last_name: "Testy1",
+        phone: "+14155550000",
       },
     });
   });
